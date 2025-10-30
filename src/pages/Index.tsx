@@ -32,6 +32,55 @@ type Comment = {
   date: string;
 };
 
+type Author = {
+  name: string;
+  avatar: string;
+  bio: string;
+  specialization: string;
+  materialsCount: number;
+  totalLikes: number;
+  joined: string;
+};
+
+const authors: Record<string, Author> = {
+  'Иванова М.П.': {
+    name: 'Иванова М.П.',
+    avatar: '/placeholder.svg',
+    bio: 'Учитель математики высшей категории. Стаж работы 15 лет. Специализируюсь на интерактивных методах обучения и геймификации образовательного процесса.',
+    specialization: 'Математика',
+    materialsCount: 12,
+    totalLikes: 487,
+    joined: 'Январь 2023',
+  },
+  'Петров А.С.': {
+    name: 'Петров А.С.',
+    avatar: '/placeholder.svg',
+    bio: 'Преподаватель литературы. Кандидат педагогических наук. Увлекаюсь проектными методиками и развитием критического мышления через литературный анализ.',
+    specialization: 'Литература',
+    materialsCount: 8,
+    totalLikes: 324,
+    joined: 'Март 2023',
+  },
+  'Сидорова Е.В.': {
+    name: 'Сидорова Е.В.',
+    avatar: '/placeholder.svg',
+    bio: 'Педагог-психолог, методист. Работаю над внедрением технологий развития критического мышления и проблемного обучения в образовательный процесс.',
+    specialization: 'Педагогика',
+    materialsCount: 15,
+    totalLikes: 612,
+    joined: 'Февраль 2023',
+  },
+  'Козлов Д.И.': {
+    name: 'Козлов Д.И.',
+    avatar: '/placeholder.svg',
+    bio: 'Учитель информатики, специалист по цифровым образовательным технологиям. Помогаю коллегам осваивать современные платформы для дистанционного обучения.',
+    specialization: 'ИКТ',
+    materialsCount: 20,
+    totalLikes: 891,
+    joined: 'Декабрь 2022',
+  },
+};
+
 const materials: Material[] = [
   {
     id: 1,
@@ -111,6 +160,7 @@ export default function Index() {
   const [selectedCategory, setSelectedCategory] = useState('Все');
   const [sortBy, setSortBy] = useState('date');
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
+  const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
   const [comments, setComments] = useState<Comment[]>(initialComments);
   const [newComment, setNewComment] = useState('');
 
@@ -154,6 +204,9 @@ export default function Index() {
 
   const materialComments = comments.filter((c) => c.materialId === selectedMaterial?.id);
 
+  const authorMaterials = selectedAuthor ? materials.filter((m) => m.author === selectedAuthor) : [];
+  const authorData = selectedAuthor ? authors[selectedAuthor] : null;
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-white sticky top-0 z-50 shadow-sm">
@@ -177,7 +230,7 @@ export default function Index() {
                 <Icon name="Grid3x3" size={18} className="mr-2" />
                 Категории
               </Button>
-              <Button variant="ghost" className="text-foreground hover:text-primary">
+              <Button variant="ghost" className="text-foreground hover:text-primary" onClick={() => { setSelectedMaterial(null); setSelectedAuthor('Иванова М.П.'); }}>
                 <Icon name="Users" size={18} className="mr-2" />
                 Авторы
               </Button>
@@ -260,12 +313,12 @@ export default function Index() {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-3 mb-4">
-                  <Avatar className="w-10 h-10">
+                  <Avatar className="w-10 h-10 cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedAuthor(material.author); }}>
                     <AvatarImage src={material.authorAvatar} />
                     <AvatarFallback>{material.author.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium text-sm">{material.author}</p>
+                    <p className="font-medium text-sm cursor-pointer hover:text-primary transition-colors" onClick={(e) => { e.stopPropagation(); setSelectedAuthor(material.author); }}>{material.author}</p>
                     <p className="text-xs text-muted-foreground">{material.date}</p>
                   </div>
                 </div>
@@ -289,6 +342,91 @@ export default function Index() {
           ))}
         </div>
 
+        {selectedAuthor && authorData && (
+          <Card className="border-2 border-secondary/30 shadow-xl mb-8">
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-4">
+                  <Avatar className="w-20 h-20">
+                    <AvatarImage src={authorData.avatar} />
+                    <AvatarFallback>{authorData.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <CardTitle className="text-2xl mb-1">{authorData.name}</CardTitle>
+                    <Badge variant="secondary" className="mb-2">
+                      {authorData.specialization}
+                    </Badge>
+                    <p className="text-sm text-muted-foreground">На платформе с {authorData.joined}</p>
+                  </div>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setSelectedAuthor(null)}>
+                  <Icon name="X" size={20} />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-base mb-6">{authorData.bio}</p>
+              
+              <div className="grid grid-cols-3 gap-4 mb-8">
+                <Card className="bg-muted/50">
+                  <CardContent className="pt-6 text-center">
+                    <div className="text-3xl font-bold text-primary mb-1">{authorData.materialsCount}</div>
+                    <p className="text-sm text-muted-foreground">Публикаций</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/50">
+                  <CardContent className="pt-6 text-center">
+                    <div className="text-3xl font-bold text-secondary mb-1">{authorData.totalLikes}</div>
+                    <p className="text-sm text-muted-foreground">Лайков</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/50">
+                  <CardContent className="pt-6 text-center">
+                    <div className="text-3xl font-bold text-accent mb-1">{authorMaterials.reduce((sum, m) => sum + m.downloads, 0)}</div>
+                    <p className="text-sm text-muted-foreground">Загрузок</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Separator className="my-6" />
+
+              <h3 className="text-xl font-bold mb-4">Публикации автора</h3>
+              <div className="space-y-4">
+                {authorMaterials.map((material) => (
+                  <Card key={material.id} className="hover:shadow-md transition-all cursor-pointer" onClick={() => { setSelectedMaterial(material); setSelectedAuthor(null); }}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <Badge variant="secondary" className="mb-2">{material.category}</Badge>
+                          <CardTitle className="text-lg mb-2">{material.title}</CardTitle>
+                          <CardDescription>{material.description}</CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Icon name="Heart" size={16} />
+                          <span>{material.likes}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Icon name="MessageCircle" size={16} />
+                          <span>{material.comments}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Icon name="Download" size={16} />
+                          <span>{material.downloads}</span>
+                        </div>
+                        <div className="ml-auto text-xs">{material.date}</div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {selectedMaterial && (
           <Card className="border-2 border-primary/30 shadow-xl">
             <CardHeader>
@@ -305,12 +443,12 @@ export default function Index() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-3 mb-6">
-                <Avatar className="w-12 h-12">
+                <Avatar className="w-12 h-12 cursor-pointer" onClick={() => setSelectedAuthor(selectedMaterial.author)}>
                   <AvatarImage src={selectedMaterial.authorAvatar} />
                   <AvatarFallback>{selectedMaterial.author.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-semibold">{selectedMaterial.author}</p>
+                  <p className="font-semibold cursor-pointer hover:text-primary transition-colors" onClick={() => setSelectedAuthor(selectedMaterial.author)}>{selectedMaterial.author}</p>
                   <p className="text-sm text-muted-foreground">{selectedMaterial.date}</p>
                 </div>
               </div>
