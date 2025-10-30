@@ -161,6 +161,7 @@ export default function Index() {
   const [sortBy, setSortBy] = useState('date');
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
+  const [showSubscriptions, setShowSubscriptions] = useState(false);
   const [comments, setComments] = useState<Comment[]>(initialComments);
   const [newComment, setNewComment] = useState('');
   const [subscribedAuthors, setSubscribedAuthors] = useState<string[]>([]);
@@ -173,7 +174,8 @@ export default function Index() {
         material.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         material.description.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = selectedCategory === 'Все' || material.category === selectedCategory;
-      return matchesSearch && matchesCategory;
+      const matchesSubscription = showSubscriptions ? subscribedAuthors.includes(material.author) : true;
+      return matchesSearch && matchesCategory && matchesSubscription;
     })
     .sort((a, b) => {
       if (sortBy === 'date') {
@@ -233,15 +235,36 @@ export default function Index() {
               </div>
             </div>
             <nav className="hidden md:flex gap-6">
-              <Button variant="ghost" className="text-foreground hover:text-primary">
+              <Button
+                variant="ghost"
+                className="text-foreground hover:text-primary"
+                onClick={() => {
+                  setShowSubscriptions(false);
+                  setSelectedMaterial(null);
+                  setSelectedAuthor(null);
+                }}
+              >
                 <Icon name="Home" size={18} className="mr-2" />
                 Главная
               </Button>
-              <Button variant="ghost" className="text-foreground hover:text-primary">
-                <Icon name="Grid3x3" size={18} className="mr-2" />
-                Категории
+              <Button
+                variant={showSubscriptions ? 'default' : 'ghost'}
+                className="text-foreground hover:text-primary"
+                onClick={() => {
+                  setShowSubscriptions(true);
+                  setSelectedMaterial(null);
+                  setSelectedAuthor(null);
+                }}
+              >
+                <Icon name="Bell" size={18} className="mr-2" />
+                Мои подписки
+                {subscribedAuthors.length > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    {subscribedAuthors.length}
+                  </Badge>
+                )}
               </Button>
-              <Button variant="ghost" className="text-foreground hover:text-primary" onClick={() => { setSelectedMaterial(null); setSelectedAuthor('Иванова М.П.'); }}>
+              <Button variant="ghost" className="text-foreground hover:text-primary" onClick={() => { setSelectedMaterial(null); setSelectedAuthor('Иванова М.П.'); setShowSubscriptions(false); }}>
                 <Icon name="Users" size={18} className="mr-2" />
                 Авторы
               </Button>
@@ -251,6 +274,54 @@ export default function Index() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {showSubscriptions && subscribedAuthors.length === 0 && (
+          <Card className="mb-8 border-2 border-dashed">
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Icon name="Bell" size={48} className="text-muted-foreground mb-4" />
+              <h3 className="text-xl font-semibold mb-2">У вас пока нет подписок</h3>
+              <p className="text-muted-foreground mb-4 text-center max-w-md">
+                Подпишитесь на авторов, чтобы первыми узнавать об их новых методических разработках
+              </p>
+              <Button onClick={() => setShowSubscriptions(false)}>
+                <Icon name="Search" size={18} className="mr-2" />
+                Найти авторов
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {showSubscriptions && subscribedAuthors.length > 0 && (
+          <section className="mb-8">
+            <h2 className="text-3xl font-bold mb-4">
+              <Icon name="Bell" size={32} className="inline mr-3" />
+              Мои подписки
+            </h2>
+            <p className="text-muted-foreground mb-6">
+              Материалы от авторов, на которых вы подписаны ({subscribedAuthors.length})
+            </p>
+            <div className="flex gap-3 flex-wrap mb-6">
+              {subscribedAuthors.map((authorName) => {
+                const author = authors[authorName];
+                return (
+                  <Card key={authorName} className="cursor-pointer hover:shadow-md transition-all" onClick={() => setSelectedAuthor(authorName)}>
+                    <CardContent className="flex items-center gap-3 p-4">
+                      <Avatar className="w-12 h-12">
+                        <AvatarImage src={author.avatar} />
+                        <AvatarFallback>{author.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-semibold text-sm">{author.name}</p>
+                        <p className="text-xs text-muted-foreground">{author.specialization}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {!showSubscriptions && (
         <section className="mb-12 text-center">
           <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
             Методические разработки для современных педагогов
@@ -269,7 +340,9 @@ export default function Index() {
             />
           </div>
         </section>
+        )
 
+        {!showSubscriptions && (
         <section className="mb-8">
           <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
             <div className="flex gap-2 flex-wrap">
@@ -300,6 +373,7 @@ export default function Index() {
             </div>
           </div>
         </section>
+        )}
 
         <div className="grid md:grid-cols-2 gap-6 mb-12">
           {filteredMaterials.map((material) => (
