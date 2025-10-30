@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import Icon from '@/components/ui/icon';
@@ -17,6 +17,7 @@ type Material = {
   author: string;
   authorAvatar: string;
   date: string;
+  dateTimestamp: number;
   likes: number;
   comments: number;
   downloads: number;
@@ -40,6 +41,7 @@ const materials: Material[] = [
     author: 'Иванова М.П.',
     authorAvatar: '/placeholder.svg',
     date: '15 октября 2024',
+    dateTimestamp: new Date('2024-10-15').getTime(),
     likes: 42,
     comments: 8,
     downloads: 156,
@@ -52,6 +54,7 @@ const materials: Material[] = [
     author: 'Петров А.С.',
     authorAvatar: '/placeholder.svg',
     date: '12 октября 2024',
+    dateTimestamp: new Date('2024-10-12').getTime(),
     likes: 38,
     comments: 12,
     downloads: 203,
@@ -64,6 +67,7 @@ const materials: Material[] = [
     author: 'Сидорова Е.В.',
     authorAvatar: '/placeholder.svg',
     date: '10 октября 2024',
+    dateTimestamp: new Date('2024-10-10').getTime(),
     likes: 51,
     comments: 15,
     downloads: 278,
@@ -76,6 +80,7 @@ const materials: Material[] = [
     author: 'Козлов Д.И.',
     authorAvatar: '/placeholder.svg',
     date: '8 октября 2024',
+    dateTimestamp: new Date('2024-10-08').getTime(),
     likes: 67,
     comments: 22,
     downloads: 412,
@@ -104,19 +109,33 @@ const initialComments: Comment[] = [
 export default function Index() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Все');
+  const [sortBy, setSortBy] = useState('date');
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [comments, setComments] = useState<Comment[]>(initialComments);
   const [newComment, setNewComment] = useState('');
 
   const categories = ['Все', 'Математика', 'Литература', 'Педагогика', 'ИКТ', 'История', 'Биология'];
 
-  const filteredMaterials = materials.filter((material) => {
-    const matchesSearch =
-      material.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      material.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'Все' || material.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredMaterials = materials
+    .filter((material) => {
+      const matchesSearch =
+        material.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        material.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === 'Все' || material.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'date') {
+        return b.dateTimestamp - a.dateTimestamp;
+      } else if (sortBy === 'likes') {
+        return b.likes - a.likes;
+      } else if (sortBy === 'downloads') {
+        return b.downloads - a.downloads;
+      } else if (sortBy === 'comments') {
+        return b.comments - a.comments;
+      }
+      return 0;
+    });
 
   const handleAddComment = () => {
     if (newComment.trim() && selectedMaterial) {
@@ -188,17 +207,33 @@ export default function Index() {
         </section>
 
         <section className="mb-8">
-          <div className="flex gap-2 flex-wrap">
-            {categories.map((category) => (
-              <Button
-                key={category}
-                variant={selectedCategory === category ? 'default' : 'outline'}
-                onClick={() => setSelectedCategory(category)}
-                className="rounded-full"
-              >
-                {category}
-              </Button>
-            ))}
+          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+            <div className="flex gap-2 flex-wrap">
+              {categories.map((category) => (
+                <Button
+                  key={category}
+                  variant={selectedCategory === category ? 'default' : 'outline'}
+                  onClick={() => setSelectedCategory(category)}
+                  className="rounded-full"
+                >
+                  {category}
+                </Button>
+              ))}
+            </div>
+            <div className="flex items-center gap-3">
+              <Icon name="ArrowUpDown" size={18} className="text-muted-foreground" />
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Сортировка" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date">По дате публикации</SelectItem>
+                  <SelectItem value="likes">По популярности</SelectItem>
+                  <SelectItem value="downloads">По загрузкам</SelectItem>
+                  <SelectItem value="comments">По обсуждаемости</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </section>
 
