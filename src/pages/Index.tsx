@@ -32,6 +32,14 @@ type Comment = {
   date: string;
 };
 
+type Notification = {
+  id: number;
+  author: string;
+  materialTitle: string;
+  date: string;
+  read: boolean;
+};
+
 type Author = {
   name: string;
   avatar: string;
@@ -162,9 +170,26 @@ export default function Index() {
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
   const [showSubscriptions, setShowSubscriptions] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [comments, setComments] = useState<Comment[]>(initialComments);
   const [newComment, setNewComment] = useState('');
   const [subscribedAuthors, setSubscribedAuthors] = useState<string[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([
+    {
+      id: 1,
+      author: 'Козлов Д.И.',
+      materialTitle: 'Новые тренды в онлайн-образовании 2024',
+      date: 'Сегодня',
+      read: false,
+    },
+    {
+      id: 2,
+      author: 'Сидорова Е.В.',
+      materialTitle: 'Психология проблемного обучения',
+      date: 'Вчера',
+      read: false,
+    },
+  ]);
 
   const categories = ['Все', 'Математика', 'Литература', 'Педагогика', 'ИКТ', 'История', 'Биология'];
 
@@ -219,6 +244,15 @@ export default function Index() {
   };
 
   const isSubscribed = selectedAuthor ? subscribedAuthors.includes(selectedAuthor) : false;
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const markAsRead = (id: number) => {
+    setNotifications(notifications.map((n) => (n.id === id ? { ...n, read: true } : n)));
+  };
+
+  const markAllAsRead = () => {
+    setNotifications(notifications.map((n) => ({ ...n, read: true })));
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -252,15 +286,34 @@ export default function Index() {
                 className="text-foreground hover:text-primary"
                 onClick={() => {
                   setShowSubscriptions(true);
+                  setShowNotifications(false);
+                  setSelectedMaterial(null);
+                  setSelectedAuthor(null);
+                }}
+              >
+                <Icon name="BookMarked" size={18} className="mr-2" />
+                Мои подписки
+                {subscribedAuthors.length > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    {subscribedAuthors.length}
+                  </Badge>
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                className="text-foreground hover:text-primary relative"
+                onClick={() => {
+                  setShowNotifications(!showNotifications);
+                  setShowSubscriptions(false);
                   setSelectedMaterial(null);
                   setSelectedAuthor(null);
                 }}
               >
                 <Icon name="Bell" size={18} className="mr-2" />
-                Мои подписки
-                {subscribedAuthors.length > 0 && (
-                  <Badge variant="secondary" className="ml-2">
-                    {subscribedAuthors.length}
+                Уведомления
+                {unreadCount > 0 && (
+                  <Badge variant="destructive" className="ml-2">
+                    {unreadCount}
                   </Badge>
                 )}
               </Button>
@@ -274,6 +327,71 @@ export default function Index() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {showNotifications && (
+          <section className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-3xl font-bold">
+                <Icon name="Bell" size={32} className="inline mr-3" />
+                Уведомления
+              </h2>
+              {unreadCount > 0 && (
+                <Button variant="outline" size="sm" onClick={markAllAsRead}>
+                  <Icon name="CheckCheck" size={16} className="mr-2" />
+                  Отметить все как прочитанные
+                </Button>
+              )}
+            </div>
+
+            {notifications.length === 0 && (
+              <Card className="border-2 border-dashed">
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <Icon name="BellOff" size={48} className="text-muted-foreground mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">Нет уведомлений</h3>
+                  <p className="text-muted-foreground text-center max-w-md">
+                    Здесь будут появляться уведомления о новых публикациях от авторов, на которых вы подписаны
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="space-y-3">
+              {notifications.map((notification) => (
+                <Card
+                  key={notification.id}
+                  className={`cursor-pointer transition-all hover:shadow-md ${
+                    !notification.read ? 'border-l-4 border-l-primary bg-primary/5' : ''
+                  }`}
+                  onClick={() => markAsRead(notification.id)}
+                >
+                  <CardContent className="flex items-start gap-4 p-4">
+                    <div className={`w-2 h-2 rounded-full mt-2 ${!notification.read ? 'bg-primary' : 'bg-transparent'}`} />
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-semibold mb-1">
+                            Новая публикация от {notification.author}
+                          </p>
+                          <p className="text-muted-foreground text-sm mb-2">
+                            {notification.materialTitle}
+                          </p>
+                        </div>
+                        <Badge variant={!notification.read ? 'default' : 'secondary'} className="text-xs">
+                          {notification.date}
+                        </Badge>
+                      </div>
+                      {!notification.read && (
+                        <Button variant="link" size="sm" className="p-0 h-auto text-xs">
+                          Перейти к материалу →
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+        )}
+
         {showSubscriptions && subscribedAuthors.length === 0 && (
           <Card className="mb-8 border-2 border-dashed">
             <CardContent className="flex flex-col items-center justify-center py-12">
@@ -322,28 +440,27 @@ export default function Index() {
         )}
 
         {!showSubscriptions && (
-        <section className="mb-12 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
-            Методические разработки для современных педагогов
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-            Обменивайтесь опытом, находите проверенные материалы и развивайте свои методики вместе с коллегами
-          </p>
-          <div className="max-w-2xl mx-auto relative">
-            <Icon name="Search" className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
-            <Input
-              type="text"
-              placeholder="Поиск методических материалов..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 py-6 text-lg"
-            />
-          </div>
-        </section>
-        )
+          <>
+            <section className="mb-12 text-center">
+              <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
+                Методические разработки для современных педагогов
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
+                Обменивайтесь опытом, находите проверенные материалы и развивайте свои методики вместе с коллегами
+              </p>
+              <div className="max-w-2xl mx-auto relative">
+                <Icon name="Search" className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
+                <Input
+                  type="text"
+                  placeholder="Поиск методических материалов..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-12 py-6 text-lg"
+                />
+              </div>
+            </section>
 
-        {!showSubscriptions && (
-        <section className="mb-8">
+            <section className="mb-8">
           <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
             <div className="flex gap-2 flex-wrap">
               {categories.map((category) => (
@@ -373,6 +490,7 @@ export default function Index() {
             </div>
           </div>
         </section>
+          </>
         )}
 
         <div className="grid md:grid-cols-2 gap-6 mb-12">
