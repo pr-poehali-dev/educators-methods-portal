@@ -163,6 +163,7 @@ export default function Index() {
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
   const [comments, setComments] = useState<Comment[]>(initialComments);
   const [newComment, setNewComment] = useState('');
+  const [subscribedAuthors, setSubscribedAuthors] = useState<string[]>([]);
 
   const categories = ['Все', 'Математика', 'Литература', 'Педагогика', 'ИКТ', 'История', 'Биология'];
 
@@ -206,6 +207,16 @@ export default function Index() {
 
   const authorMaterials = selectedAuthor ? materials.filter((m) => m.author === selectedAuthor) : [];
   const authorData = selectedAuthor ? authors[selectedAuthor] : null;
+
+  const toggleSubscribe = (authorName: string) => {
+    if (subscribedAuthors.includes(authorName)) {
+      setSubscribedAuthors(subscribedAuthors.filter((a) => a !== authorName));
+    } else {
+      setSubscribedAuthors([...subscribedAuthors, authorName]);
+    }
+  };
+
+  const isSubscribed = selectedAuthor ? subscribedAuthors.includes(selectedAuthor) : false;
 
   return (
     <div className="min-h-screen bg-background">
@@ -317,10 +328,16 @@ export default function Index() {
                     <AvatarImage src={material.authorAvatar} />
                     <AvatarFallback>{material.author.charAt(0)}</AvatarFallback>
                   </Avatar>
-                  <div>
+                  <div className="flex-1">
                     <p className="font-medium text-sm cursor-pointer hover:text-primary transition-colors" onClick={(e) => { e.stopPropagation(); setSelectedAuthor(material.author); }}>{material.author}</p>
                     <p className="text-xs text-muted-foreground">{material.date}</p>
                   </div>
+                  {subscribedAuthors.includes(material.author) && (
+                    <Badge variant="outline" className="text-xs">
+                      <Icon name="Check" size={12} className="mr-1" />
+                      Подписка
+                    </Badge>
+                  )}
                 </div>
                 <Separator className="mb-4" />
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
@@ -359,9 +376,18 @@ export default function Index() {
                     <p className="text-sm text-muted-foreground">На платформе с {authorData.joined}</p>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setSelectedAuthor(null)}>
-                  <Icon name="X" size={20} />
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant={isSubscribed ? 'secondary' : 'default'}
+                    onClick={() => toggleSubscribe(authorData.name)}
+                  >
+                    <Icon name={isSubscribed ? 'Check' : 'UserPlus'} size={18} className="mr-2" />
+                    {isSubscribed ? 'Вы подписаны' : 'Подписаться'}
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => setSelectedAuthor(null)}>
+                    <Icon name="X" size={20} />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
